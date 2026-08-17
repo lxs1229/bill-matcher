@@ -4,14 +4,21 @@
 # ============================================================
 
 # ---------- 视觉识别 AI（负责提取收据信息） ----------
-# provider:
-#   ollama            本地运行（推荐，免费且私密，模型经 Ollama 提供）
-#   openai_compatible 任意 OpenAI 兼容接口（如官方视觉 API / 其他云服务）
+# provider 二选一：
+#   openai_compatible  云端视觉 API（分享给他人的主要方案，只需填下面三项）
+#   ollama             本地运行（可选，免费且私密；需另装 ollama 并 pull 模型）
+#
+# 【云端 API】示例 —— 填你的服务商地址、模型、key：
+#   provider: openai_compatible
+#   base_url: https://api.xxx.com/v1      # 替换成你的服务商地址
+#   model: qwen-vl-max                    # 替换成你的视觉模型名
+#   api_key: sk-xxxx                      # 你的 API key
+#
 vision:
   provider: ollama
-  base_url: http://localhost:11434   # ollama 地址；远程接口填 https://...
+  base_url: http://localhost:11434   # ollama 地址；用云端 API 时填服务商地址
   model: qwen2.5vl:7b                # 视觉模型名
-  api_key: ""                        # ollama 本地留空；远程接口填你的 key
+  api_key: ""                        # ollama 本地留空；云端 API 填你的 key
 
 # ---------- 分类 AI（负责给已确认支出打分类标签） ----------
 # provider:

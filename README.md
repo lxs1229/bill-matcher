@@ -18,13 +18,15 @@
 ## 🚀 快速开始
 
 ### 前置要求
-- macOS / Linux（Windows 需自行装 ollama + Python 3.10+）
+- macOS / Linux / Windows（需 Python 3.10+）
 - Python 3.10+
-- [Ollama](https://ollama.com/download)（本地视觉模型，免费）
+- 一个**视觉识别 API**（收据识别用，OpenAI 兼容接口即可；如 Qwen-VL / 通义 / GLM 等）
+- 一个**分类 API**（如 DeepSeek）
+- （可选）本地 [Ollama](https://ollama.com/download)，可免费用本地视觉模型，数据不出机器
 
 ### 安装
 ```bash
-./setup.sh     # 一键：拉取视觉模型 + 建 venv + 装依赖（首次约几分钟）
+./setup.sh     # 一键：建 venv + 装依赖（ollama 可选，不装也能用云端 API）
 ```
 
 ### 启动
@@ -32,20 +34,20 @@
 ./run.sh       # 然后浏览器打开 http://localhost:8000
 ```
 
-### 配置 AI
-编辑项目根目录的 **`config.yaml`**，可切换视觉识别和分类所用的 AI 供应商：
+### 配置 AI（必做）
+编辑项目根目录的 **`config.yaml`**，填入你的视觉 + 分类 API：
 ```yaml
 vision:    # 收据视觉识别
-  provider: ollama          # ollama(本地) 或 openai_compatible(云端)
-  base_url: http://localhost:11434
-  model: qwen2.5vl:7b
-  api_key: ""
+  provider: openai_compatible   # 云端API；若用本地ollama则填 ollama
+  base_url: https://api.xxx.com/v1   # 你的服务商地址
+  model: qwen-vl-max            # 你的视觉模型
+  api_key: sk-xxxx              # 你的 key
 
 classify:  # 分类 AI
-  provider: deepseek        # deepseek 或 openai_compatible
+  provider: deepseek            # deepseek 或 openai_compatible
   base_url: https://api.deepseek.com
   model: deepseek-v4-flash
-  api_key: ""               # 留空自动读环境变量 / ~/.hermes/config.yaml
+  api_key: ""                   # 留空自动读环境变量 / ~/.hermes/config.yaml
 ```
 改完保存 → 重启 `./run.sh` 生效。
 
@@ -91,8 +93,11 @@ bill-matcher/
 
 ## ❓ 常见问题
 
-**Q: 上传收据报 "Connection refused"**
-→ ollama 服务没运行。打开 Ollama 应用或运行 `ollama serve`。建议配置开机自启。
+**Q: 上传收据报 "Connection refused" / 提取失败**
+→ 你用的是本地 ollama 但服务没启动。打开 Ollama 应用或运行 `ollama serve`；或者直接在 config.yaml 改用云端视觉 API（`provider: openai_compatible` + 填 API）。
+
+**Q: 视觉识别报 "api_key" 相关错误**
+→ 云端 API 必须填 `vision.api_key`；确认 `vision.base_url` / `model` 和你服务商的文档一致。
 
 **Q: 银行账单解析报 "paddlepaddle not installed"**
 → 依赖没装全，重新跑 `./setup.sh`，或手动 `pip install paddlepaddle paddleocr "paddlex[ocr]"`。
