@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.py[cod]
+backend/.venv/
+*.egg-info/
+
+# 本地数据（数据库自动重建，勿提交）
+billmatch.db
+*.db
+
+# 系统
+.DS_Store

@@ -1,0 +1,40 @@
+# ============================================================
+#  Bill Matcher 配置文件
+#  修改后保存，重启应用生效 (Ctrl+C 重启 run.sh)
+# ============================================================
+
+# ---------- 视觉识别 AI（负责提取收据信息） ----------
+# provider:
+#   ollama            本地运行（推荐，免费且私密，模型经 Ollama 提供）
+#   openai_compatible 任意 OpenAI 兼容接口（如官方视觉 API / 其他云服务）
+vision:
+  provider: ollama
+  base_url: http://localhost:11434   # ollama 地址；远程接口填 https://...
+  model: qwen2.5vl:7b                # 视觉模型名
+  api_key: ""                        # ollama 本地留空；远程接口填你的 key
+
+# ---------- 分类 AI（负责给已确认支出打分类标签） ----------
+# provider:
+#   deepseek          DeepSeek 官方接口 (api.deepseek.com)
+#   openai_compatible 任意 OpenAI 兼容接口（可换成 GLM/通义/Qwen 等）
+# api_key 留空时的回退顺序：
+#   1) 环境变量 DEEPSEEK_API_KEY
+#   2) 你的 Hermes 配置 ~/.hermes/config.yaml（若其中有 DeepSeek provider）
+classify:
+  provider: deepseek
+  base_url: https://api.deepseek.com
+  model: deepseek-v4-flash
+  api_key: ""
+
+# ---------- 分类标签（DeepSeek 只从这里面选一个） ----------
+categories:
+  - 餐饮
+  - 超市购物
+  - 交通
+  - 居住/水电
+  - 娱乐/订阅
+  - 数码/购物
+  - 医疗
+  - 旅行
+  - 转账
+  - 其他

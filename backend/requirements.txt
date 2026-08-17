@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+pdfplumber
+python-multipart
+requests
+pyyaml
+# optional (needed only for photo/scanned bank statements):
+paddlepaddle
+paddleocr
+paddlex[ocr]

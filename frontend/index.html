@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>账单配对 · Bill Matcher</title>
+<style>
+  :root{
+    --bg:#0f1115; --panel:#171a21; --panel2:#1d212b; --border:#2a2f3a;
+    --txt:#e6e9ef; --muted:#8a93a6; --accent:#4f8cff; --accent2:#6ee7a0;
+    --warn:#fbbf24; --bad:#f87171;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--txt);font-family:-apple-system,"PingFang SC","Microsoft YaHei",system-ui,sans-serif;min-height:100vh}
+  .wrap{max-width:1080px;margin:0 auto;padding:28px 20px 80px}
+  header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px}
+  h1{font-size:22px;font-weight:700;letter-spacing:.3px}
+  h1 span{color:var(--accent)}
+  .tag{font-size:12px;color:var(--muted);background:var(--panel);border:1px solid var(--border);padding:4px 10px;border-radius:20px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:18px}
+  .panel h2{font-size:14px;color:var(--muted);margin-bottom:14px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+  .up{display:flex;flex-direction:column;gap:10px}
+  .up input[type=file]{font-size:13px;color:var(--muted)}
+  .up label{font-size:12px;color:var(--muted)}
+  .btn{background:var(--accent);color:#fff;border:none;padding:9px 16px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer}
+  .btn:hover{filter:brightness(1.1)}
+  .btn.ghost{background:var(--panel2);border:1px solid var(--border);color:var(--txt)}
+  .btn.warn{background:var(--warn);color:#111}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .status{font-size:12px;color:var(--muted);margin-top:8px;min-height:16px;white-space:pre-wrap}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .list{display:flex;flex-direction:column;gap:8px;max-height:320px;overflow:auto}
+  .item{background:var(--panel2);border:1px solid var(--border);border-radius:9px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px}
+  .item .m{font-weight:600}
+  .item .d{color:var(--muted);font-size:12px;margin-top:2px}
+  .amt{font-weight:700;white-space:nowrap}
+  .badge{font-size:11px;padding:2px 8px;border-radius:12px;font-weight:600}
+  .badge.auto{background:rgba(110,231,160,.15);color:var(--accent2)}
+  .badge.review{background:rgba(251,191,36,.15);color:var(--warn)}
+  .badge.unmatched,.badge.no_match{background:rgba(248,113,113,.12);color:var(--bad)}
+  .badge.confirmed{background:rgba(79,140,255,.15);color:var(--accent)}
+  .review-section{margin-top:16px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--border)}
+  th{color:var(--muted);font-weight:600;font-size:12px}
+  td .conf{color:var(--accent);font-weight:700}
+  .minibtn{font-size:11px;padding:4px 9px;border-radius:7px;border:1px solid var(--border);background:var(--panel2);color:var(--txt);cursor:pointer}
+  .minibtn.ok{background:rgba(110,231,160,.15);border-color:var(--accent2);color:var(--accent2)}
+  .minibtn.no{background:rgba(248,113,113,.12);border-color:var(--bad);color:var(--bad)}
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0}
+  .summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+  .stat{background:var(--panel2);border:1px solid var(--border);border-radius:12px;padding:14px}
+  .stat .v{font-size:22px;font-weight:700;margin-top:4px}
+  .stat .l{font-size:12px;color:var(--muted)}
+  .stat .v.cat{font-size:15px}
+  .empty{color:var(--muted);font-size:13px;padding:16px;text-align:center;border:1px dashed var(--border);border-radius:9px}
+  .actions{display:flex;gap:6px;flex-wrap:wrap}
+  .loading{color:var(--accent);font-size:13px}
+  @media(max-width:760px){.grid,.cols{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>账单配对 <span>·</span> Bill Matcher</h1>
+    <span class="tag">收据 ↔ 银行流水 智能配对 + 复核</span>
+  </header>
+
+  <!-- upload -->
+  <div class="grid">
+    <div class="panel">
+      <h2>上传收据（拍照 / PDF / 截图）</h2>
+      <div class="up">
+        <input type="file" id="receiptFile" accept="image/*,.pdf" multiple>
+        <button class="btn" onclick="uploadReceipts()">上传并提取</button>
+        <div class="status" id="receiptStatus"></div>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>上传银行账单（电子 PDF / 照片）</h2>
+      <div class="up">
+        <input type="file" id="bankFile" accept=".pdf,image/*">
+        <button class="btn" onclick="uploadBank()">上传并解析</button>
+        <div class="status" id="bankStatus"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- lists -->
+  <div class="cols">
+    <div class="panel">
+      <h2>已提取收据</h2>
+      <div class="list" id="receiptList"><div class="empty">暂无，上传收据后自动提取</div></div>
+    </div>
+    <div class="panel">
+      <h2>银行交易</h2>
+      <div class="list" id="txnList"><div class="empty">暂无，上传账单后自动解析</div></div>
+    </div>
+  </div>
+
+  <!-- toolbar -->
+  <div class="toolbar">
+    <button class="btn" onclick="runMatch()">🔗 运行配对</button>
+    <button class="btn" onclick="runClassify()">🏷 分类（DeepSeek）</button>
+    <button class="btn ghost" onclick="loadAll()">↻ 刷新</button>
+    <button class="btn warn" onclick="resetAll()" style="margin-left:auto">清空全部</button>
+  </div>
+
+  <!-- review table -->
+  <div class="panel review-section">
+    <h2>配对结果 · 人工复核</h2>
+    <div id="reviewWrap"><div class="empty">运行配对后显示候选</div></div>
+  </div>
+
+  <!-- summary -->
+  <div class="panel review-section">
+    <h2>汇总</h2>
+    <div class="summary" id="summaryWrap"><div class="empty">暂无数据</div></div>
+  </div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+async function j(url,opt){const r=await fetch(url,opt);const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.detail||d.error||('HTTP '+r.status));return d;}
+
+async function uploadReceipts(){
+  const f=$('receiptFile').files; if(!f.length){$('receiptStatus').textContent='请选择收据文件';return;}
+  $('receiptStatus').textContent='⏳ 正在用 Qwen2.5-VL 提取…（每张约 10-20 秒）';$('receiptStatus').className='status loading';
+  for(const file of f){
+    const fd=new FormData();fd.append('file',file);
+    try{const r=await j('/api/receipt',{method:'POST',body:fd});
+         $('receiptStatus').textContent+=`\n✅ ${file.name}: ${r.receipt.merchant||'?'} — ${r.receipt.total_amount??r.receipt.amount}${r.receipt.currency||''}`;}
+    catch(e){$('receiptStatus').textContent+=`\n❌ ${file.name}: ${e.message}`;}
+  }
+  $('receiptStatus').className='status';loadAll();
+}
+
+async function uploadBank(){
+  const f=$('bankFile').files[0]; if(!f){$('bankStatus').textContent='请选择账单文件';return;}
+  $('bankStatus').textContent='⏳ 正在解析账单…';$('bankStatus').className='status loading';
+  const fd=new FormData();fd.append('file',f);
+  try{const r=await j('/api/bank',{method:'POST',body:fd});
+      $('bankStatus').textContent=`✅ 解析出 ${r.count} 笔交易`;
+      $('bankStatus').className='status';loadAll();}
+  catch(e){$('bankStatus').textContent='❌ '+e.message;$('bankStatus').className='status';}
+}
+
+async function loadAll(){
+  try{
+    const [rs,ts]=await Promise.all([j('/api/receipts'),j('/api/transactions')]);
+    renderReceipts(rs);renderTxns(ts);loadMatches();
+  }catch(e){console.error(e);}
+}
+
+function renderReceipts(rs){
+  const el=$('receiptList');
+  if(!rs.length){el.innerHTML='<div class="empty">暂无收据</div>';return;}
+  el.innerHTML=rs.map(r=>`<div class="item">
+    <div><div class="m">${esc(r.merchant||'?')}</div><div class="d">${r.date||''} · ${r.filename||''}</div></div>
+    <div class="amt">${fmt(r.amount)}${r.currency||''}</div></div>`).join('');
+}
+function renderTxns(ts){
+  const el=$('txnList');
+  if(!ts.length){el.innerHTML='<div class="empty">暂无交易</div>';return;}
+  el.innerHTML=ts.map(t=>`<div class="item">
+    <div><div class="m">${esc(t.description||'?')}</div><div class="d">${t.date||''}</div></div>
+    <div class="amt">${t.debit!=null?'-'+fmt(t.debit):(t.credit!=null?'+'+fmt(t.credit):'')}</div></div>`).join('');
+}
+
+async function runMatch(){
+  const b=[...document.querySelectorAll('.toolbar .btn')][0];b.disabled=true;b.textContent='配对中…';
+  try{const r=await j('/api/match',{method:'POST'});await loadMatches();}
+  catch(e){alert('配对失败: '+e.message);}
+  finally{b.disabled=false;b.textContent='🔗 运行配对';}
+}
+
+async function loadMatches(){
+  try{
+    const [ms,sm]=await Promise.all([j('/api/matches'),j('/api/summary')]);
+    renderMatches(ms);renderSummary(sm);
+  }catch(e){console.error(e);}
+}
+
+const lbl={auto:'自动配对',review:'待复核',confirmed:'已确认',rejected:'已拒绝',unmatched:'未匹配',no_match:'未匹配'};
+function renderMatches(ms){
+  const el=$('reviewWrap');
+  if(!ms.length){el.innerHTML='<div class="empty">运行配对后显示候选</div>';return;}
+  const confirmed=ms.filter(m=>['auto','confirmed'].includes(m.status));
+  const rest=ms.filter(m=>!['auto','confirmed'].includes(m.status));
+  const row=m=>{const brk=JSON.parse(m.breakdown||'{}');
+    const st=m.status==='auto'?'auto':m.status==='confirmed'?'confirmed':'review';
+    return `<tr>
+      <td>${esc(m.r_merchant||'?')}<div style="font-size:11px;color:var(--muted)">${m.r_date||''} · ${fmt(m.r_amount)}</div></td>
+      <td>${esc(m.t_description||'—')}<div style="font-size:11px;color:var(--muted)">${m.t_date||''} · ${m.t_debit!=null?'-'+fmt(m.t_debit):''}</div></td>
+      <td><span class="conf">${m.confidence}</span><div style="font-size:11px;color:var(--muted)">商${brk.merchant??'-'} 日${brk.date??'-'} 额${brk.amount??'-'}</div></td>
+      <td><span class="badge ${st}">${lbl[m.status]||m.status}</span>${brk.category?` <span class="badge confirmed">${esc(brk.category)}</span>`:''}</td>
+      <td><div class="actions">
+        <button class="minibtn ok" onclick="confirm(${m.receipt_id},${m.txn_id||'null'},'confirmed')">✓ 确认</button>
+        <button class="minibtn no" onclick="confirm(${m.receipt_id},${m.txn_id||'null'},'rejected')">✗ 拒绝</button>
+      </div></td></tr>`;};
+  let html=`<table><thead><tr><th>收据</th><th>银行交易</th><th>置信度</th><th>状态</th><th>操作</th></tr></thead>`;
+  html+=`<tbody>${rest.map(row).join('')}${confirmed.map(row).join('')}</tbody></table>`;
+  el.innerHTML=html;
+}
+
+async function confirm(rid,txn,status){
+  try{await j('/api/confirm',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({receipt_id:rid,txn_id:txn,status})});await loadMatches();}
+  catch(e){alert(e.message);}
+}
+
+async function runClassify(){
+  const b=[...document.querySelectorAll('.toolbar .btn')][1];b.disabled=true;b.textContent='分类中…';
+  try{const r=await j('/api/classify',{method:'POST'});
+       if(r.error){alert(r.error);} else await loadMatches();}
+  catch(e){alert('分类失败: '+e.message);}
+  finally{b.disabled=false;b.textContent='🏷 分类（DeepSeek）';}
+}
+
+function renderSummary(s){
+  const el=$('summaryWrap');
+  el.innerHTML=`
+    <div class="stat"><div class="l">已确认支出笔数</div><div class="v">${s.total_confirmed}</div></div>
+    <div class="stat"><div class="l">已确认总金额</div><div class="v">€ ${s.total_amount}</div></div>
+    <div class="stat"><div class="l">未配对收据</div><div class="v" style="color:var(--bad)">${s.unmatched_receipts}</div></div>`+
+    Object.entries(s.by_category||{}).map(([c,v])=>`<div class="stat"><div class="l">${esc(c)}</div><div class="v cat">€ ${v}</div></div>`).join('');
+}
+
+async function resetAll(){
+  if(!confirm('确定清空所有收据、交易和配对结果？'))return;
+  await j('/api/reset',{method:'POST'});loadAll();
+}
+
+const esc=s=>(s==null?'':String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])));
+const fmt=n=>(n==null?'':Number(n).toFixed(2));
+
+loadAll();
+</script>
+</body>
+</html>
