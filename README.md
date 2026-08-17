@@ -1,5 +1,8 @@
 # Bill Matcher · 账单配对工具
 
+![CI](https://github.com/lxs1229/bill-matcher/actions/workflows/ci.yml/badge.svg)
+![License](https://img.shields.io/badge/license-MIT-green)
+
 把**消费收据**和**银行卡流水**自动配对，给每笔消费打上分类标签，供人工复核。全程本地可选、免费、隐私（银行数据不出机器）。
 
 > 面向使用者的完整架构说明见 **[ARCHITECTURE.md](ARCHITECTURE.md)**。
